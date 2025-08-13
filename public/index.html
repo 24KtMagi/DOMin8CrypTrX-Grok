@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DOMin8™ CrypTrX™ Uploader</title>
+  <style>
+    body {
+      background-color: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2em;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 1em;
+      color: #8f00ff;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1em;
+      background: #1a1a1a;
+      padding: 2em;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 480px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select, button {
+      padding: 0.75em;
+      border-radius: 8px;
+      border: none;
+      background: #2c2c2c;
+      color: #fff;
+    }
+    button {
+      background-color: #8f00ff;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #6d00cc;
+    }
+    .message {
+      margin-top: 1em;
+      font-style: italic;
+      color: #ffdd57;
+    }
+    a {
+      color: #8f00ff;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>DOMin8™ CrypTrX™ 🧬</h1>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <label for="file">Upload Your Asset</label>
+    <input type="file" name="file" required />
+
+    <label for="logo">Upload Your Logo</label>
+    <input type="file" name="logo" required />
+
+    <label for="type">Select Asset Type</label>
+    <select name="type" required>
+      <option value="image">Image</option>
+      <option value="video">Video</option>
+      <option value="3d">3D</option>
+    </select>
+
+    <button type="submit">Process with DOMin8™ CrypTrX™</button>
+    <div class="message" id="status"></div>
+  </form>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const status = document.getElementById('status');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      status.textContent = "Processing... DOMin8™ is taking control 👑";
+
+      const formData = new FormData(form);
+      const fileType = formData.get('type');
+      const extension = fileType === 'image' ? 'png' : fileType === 'video' ? 'mp4' : 'glb';
+
+      try {
+        const response = await fetch('/process', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to process: ${await response.text()}`);
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `domin8_output.${extension}`;
+        link.click();
+
+        // Also show a persistent link (assuming server saves it)
+        status.innerHTML = `Your DOMin8™ asset is ready to download ✨<br>Saved on server: <a href="${response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || `/outputs/domin8_output.${extension}`}">Download again</a>`;
+      } catch (err) {
+        status.textContent = `Something went wrong: ${err.message}. The chain resisted.`;
+      }
+    });
+  </script>
+</body>
+</html>
