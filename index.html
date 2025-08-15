@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DOMin8™ CrypTrX™ Uploader</title>
+  <style>
+    body {
+      background-image: url('/logoappbackground.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2em;
+      margin: 0;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 1em;
+      color: #8f00ff;
+      text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.7);
+    }
+    .tabs {
+      display: flex;
+      gap: 1em;
+      margin-bottom: 1em;
+    }
+    .tab-button {
+      padding: 0.5em 1em;
+      background: #2c2c2c;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+    }
+    .tab-button.active {
+      background-color: #8f00ff;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1em;
+      background: rgba(26, 26, 26, 0.9);
+      padding: 2em;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 480px;
+      backdrop-filter: blur(5px);
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select, button {
+      padding: 0.75em;
+      border-radius: 8px;
+      border: none;
+      background: #2c2c2c;
+      color: #fff;
+    }
+    button {
+      background-color: #8f00ff;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background-color: #6d00cc;
+    }
+    .message {
+      margin-top: 1em;
+      font-style: italic;
+      color: #ffdd57;
+    }
+    a {
+      color: #8f00ff;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>DOMin8™ CrypTrX™ 🧬</h1>
+  <div class="tabs">
+    <button class="tab-button active" onclick="openTab('upload')">Upload</button>
+    <button class="tab-button" onclick="openTab('progress')">Progress</button>
+  </div>
+  <div id="upload-tab" class="tab-content active">
+    <form id="uploadForm" enctype="multipart/form-data">
+      <label for="file">Upload Your Asset</label>
+      <input type="file" name="file" required />
+      <label for="logo">Upload Your Logo</label>
+      <input type="file" name="logo" required />
+      <label for="type">Select Asset Type</label>
+      <select name="type" required>
+        <option value="image">Image</option>
+        <option value="video">Video</option>
+        <option value="3d">3D</option>
+      </select>
+      <button type="submit">Process with DOMin8™ CrypTrX™</button>
+      <div class="message" id="status"></div>
+      <input type="hidden" id="lastStep" name="lastStep" value="">
+    </form>
+  </div>
+  <div id="progress-tab" class="tab-content">
+    <h2>Last Position</h2>
+    <p id="progressText">No progress saved yet.</p>
+    <button onclick="resetProgress()">Reset Progress</button>
+  </div>
+  <script>
+    const form = document.getElementById('uploadForm');
+    const status = document.getElementById('status');
+    const lastStep = document.getElementById('lastStep');
+    const progressText = document.getElementById('progressText');
+
+    // Load last progress
+    let currentStep = localStorage.getItem('domin8Progress') || 'start';
+    lastStep.value = currentStep;
+    if (currentStep !== 'start') {
+      progressText.textContent = `Last saved at: ${currentStep}`;
+    }
+
+    // Tab switching
+    function openTab(tabName) {
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      document.querySelector(`[onclick="openTab('${tabName}')"]`).classList.add('active');
+      document.getElementById(`${tabName}-tab`).classList.add('active');
+    }
+
+    // Form submission with progress tracking
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      status.textContent = "Processing... DOMin8™ is taking control 👑";
+      currentStep = `Step: Processed at ${new Date().toLocaleTimeString()}`;
+      lastStep.value = currentStep;
+      localStorage.setItem('domin8Progress', currentStep);
+      progressText.textContent = `Last saved at: ${currentStep}`;
+
+      const formData = new FormData(form);
+      const fileType = formData.get('type');
+      const extension = fileType === 'image' ? 'png' : fileType === 'video' ? 'mp4' : 'glb';
+      const backendUrl = 'https://domin8cryptrx-grok.vercel.app'; // Update with your URL
+
+      try {
+        const response = await fetch(`${backendUrl}/process`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to process: ${await response.text()}`);
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `domin8_output.${extension}`;
+        link.click();
+
+        const filename = response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || `domin8_output.${extension}`;
+        status.innerHTML = `Your DOMin8™ asset is ready to download ✨<br>Saved on server: <a href="${backendUrl}/outputs/${filename}">Download again</a>`;
+      } catch (err) {
+        status.textContent = `Something went wrong: ${err.message}. The chain resisted.`;
+      }
+    });
+
+    // Reset progress
+    function resetProgress() {
+      currentStep = 'start';
+      lastStep.value = currentStep;
+      localStorage.setItem('domin8Progress', currentStep);
+      progressText.textContent = 'No progress saved yet.';
+    }
+  </script>
+</body>
+</html>
